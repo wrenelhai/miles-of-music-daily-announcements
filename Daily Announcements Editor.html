@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Daily Announcements — Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root {
+    --ink: #000;
+    --paper: #fafaf6;
+    --paper-print: #ffffff;
+    --notch: .26in;
+  }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f0ede8;
+    color: #1a1a1a;
+    min-height: 100vh;
+  }
+
+  /* ---- Header bar ---- */
+  .editor-header {
+    background: #1a1a1a;
+    color: #f0ede8;
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .editor-header h1 {
+    margin: 0;
+    font-size: 13pt;
+    font-weight: 600;
+  }
+  .editor-header p {
+    margin: 2px 0 0;
+    font-size: 9.5pt;
+    opacity: .6;
+  }
+  .btn-print {
+    background: #c8a96e;
+    color: #1a1a1a;
+    border: none;
+    padding: 10px 26px;
+    font-size: 11pt;
+    font-weight: 700;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: .04em;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .btn-print:hover { background: #b89660; }
+
+  /* ---- Two-column layout ---- */
+  .editor-body {
+    display: flex;
+    min-height: calc(100vh - 58px);
+  }
+
+  /* ---- Form panel ---- */
+  .form-panel {
+    width: 340px;
+    flex-shrink: 0;
+    background: #fff;
+    border-right: 1px solid #d8d4cc;
+    padding: 28px 22px 48px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  label {
+    font-size: 8.5pt;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #666;
+  }
+  input[type="text"], textarea {
+    width: 100%;
+    border: 1.5px solid #d0ccc4;
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-size: 11pt;
+    font-family: inherit;
+    color: #1a1a1a;
+    background: #fafaf8;
+    line-height: 1.4;
+    resize: vertical;
+  }
+  input[type="text"]:focus, textarea:focus {
+    outline: none;
+    border-color: #c8a96e;
+    background: #fff;
+  }
+
+  .divider { border: none; border-top: 1px solid #ece8e0; margin: 4px 0; }
+
+  .section-label {
+    font-size: 8.5pt;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #666;
+    margin: 0;
+  }
+  .hint {
+    font-size: 9pt;
+    color: #999;
+    margin: 4px 0 0;
+    line-height: 1.45;
+  }
+
+  /* ---- Announcement rows ---- */
+  .announcements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ann-row {
+    display: flex;
+    gap: 7px;
+    align-items: flex-start;
+  }
+  .ann-row textarea {
+    flex: 1;
+    min-height: 56px;
+  }
+  .btn-remove {
+    background: none;
+    border: 1.5px solid #d0ccc4;
+    border-radius: 4px;
+    width: 30px;
+    height: 30px;
+    font-size: 16pt;
+    line-height: 1;
+    cursor: pointer;
+    color: #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 3px;
+    padding: 0 0 2px;
+  }
+  .btn-remove:hover { border-color: #cc3333; color: #cc3333; }
+
+  .btn-add {
+    background: none;
+    border: 1.5px dashed #c0bbb2;
+    border-radius: 4px;
+    padding: 9px;
+    font-size: 10pt;
+    color: #888;
+    cursor: pointer;
+    text-align: center;
+    width: 100%;
+    font-family: inherit;
+  }
+  .btn-add:hover { border-color: #c8a96e; color: #9a7840; }
+
+  /* ---- Preview panel ---- */
+  .preview-panel {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 48px 24px 96px;
+    overflow-y: auto;
+  }
+
+  /* ======= CARD (identical to original) ======= */
+  .card-wrap {
+    position: relative;
+    width: 5in;
+    height: 7in;
+    box-shadow: 0 30px 60px rgba(0,0,0,.45), 0 2px 0 rgba(0,0,0,.6);
+    flex-shrink: 0;
+  }
+  .card {
+    width: 100%;
+    height: 100%;
+    background: var(--paper);
+    border: 2.5px solid var(--ink);
+    -webkit-mask:
+      radial-gradient(circle var(--notch) at top left,     transparent calc(var(--notch) - .6px), #000 var(--notch)) top left      /50.01% 50.01% no-repeat,
+      radial-gradient(circle var(--notch) at top right,    transparent calc(var(--notch) - .6px), #000 var(--notch)) top right     /50.01% 50.01% no-repeat,
+      radial-gradient(circle var(--notch) at bottom left,  transparent calc(var(--notch) - .6px), #000 var(--notch)) bottom left   /50.01% 50.01% no-repeat,
+      radial-gradient(circle var(--notch) at bottom right, transparent calc(var(--notch) - .6px), #000 var(--notch)) bottom right  /50.01% 50.01% no-repeat;
+    mask:
+      radial-gradient(circle var(--notch) at top left,     transparent calc(var(--notch) - .6px), #000 var(--notch)) top left      /50.01% 50.01% no-repeat,
+      radial-gradient(circle var(--notch) at top right,    transparent calc(var(--notch) - .6px), #000 var(--notch)) top right     /50.01% 50.01% no-repeat,
+      radial-gradient(circle var(--notch) at bottom left,  transparent calc(var(--notch) - .6px), #000 var(--notch)) bottom left   /50.01% 50.01% no-repeat,
+      radial-gradient(circle var(--notch) at bottom right, transparent calc(var(--notch) - .6px), #000 var(--notch)) bottom right  /50.01% 50.01% no-repeat;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  .card-arc {
+    position: absolute;
+    width: calc(2 * var(--notch));
+    height: calc(2 * var(--notch));
+    border: 2.5px solid var(--ink);
+    border-radius: 50%;
+    pointer-events: none;
+    background: transparent;
+  }
+  .card-arc.tl { top: calc(-1 * var(--notch)); left: calc(-1 * var(--notch)); clip-path: inset(50% 0 0 50%); }
+  .card-arc.tr { top: calc(-1 * var(--notch)); right: calc(-1 * var(--notch)); clip-path: inset(50% 50% 0 0); }
+  .card-arc.bl { bottom: calc(-1 * var(--notch)); left: calc(-1 * var(--notch)); clip-path: inset(0 0 50% 50%); }
+  .card-arc.br { bottom: calc(-1 * var(--notch)); right: calc(-1 * var(--notch)); clip-path: inset(0 50% 50% 0); }
+
+  .card-header {
+    padding: .34in .48in .3in;
+    border-bottom: 2.5px solid var(--ink);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .07in;
+  }
+  .eyebrow {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: "Special Elite", monospace;
+    font-size: 8.5pt;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .eyebrow::before, .eyebrow::after { content: ""; flex: 1; border-top: 1px solid var(--ink); }
+  .card-title {
+    margin: .03in 0 0;
+    font-family: "Crimson Text", serif;
+    font-weight: 600;
+    font-size: 27pt;
+    line-height: 1.05;
+    text-align: center;
+    letter-spacing: .005em;
+  }
+  .card-rule { width: 1.6in; border: none; border-top: 1.5px solid var(--ink); margin: .05in 0 .02in; }
+  .card-instruction {
+    margin: 0;
+    font-family: "Special Elite", monospace;
+    font-size: 9pt;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .card-body {
+    flex: 1;
+    padding: .14in .48in .18in;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+  }
+  .ann {
+    display: flex;
+    gap: .14in;
+    align-items: flex-start;
+    padding: .1in 0;
+    border-bottom: 1px solid rgba(0,0,0,.14);
+  }
+  .ann:last-child { border-bottom: none; }
+  .ann-mark {
+    font-family: "Special Elite", monospace;
+    font-size: 11pt;
+    flex: none;
+    line-height: 1.38;
+    user-select: none;
+  }
+  .ann-text {
+    font-family: "Crimson Text", serif;
+    font-size: 12pt;
+    line-height: 1.38;
+    margin: 0;
+  }
+  .ann-text em { font-style: italic; }
+  .card-footer {
+    border-top: 2.5px solid var(--ink);
+    padding: .1in .48in;
+    display: flex;
+    justify-content: space-between;
+    font-family: "Special Elite", monospace;
+    font-size: 8pt;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+  }
+
+  /* ---- Print ---- */
+  @media print {
+    @page { size: 5in 7in; margin: 0; }
+    .editor-header, .form-panel { display: none !important; }
+    .editor-body { display: block; min-height: 0; }
+    .preview-panel { padding: 0; display: block; background: #fff; }
+    html, body { background: #fff; }
+    .card-wrap { box-shadow: none; margin-top: .15in; height: calc(7in - .15in); width: 5in; }
+    .card { background: var(--paper-print); -webkit-mask: none; mask: none; }
+    .card-arc { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff; }
+  }
+</style>
+</head>
+<body>
+
+<header class="editor-header">
+  <div>
+    <h1>Daily Announcements — Editor</h1>
+    <p>Miles of Music &middot; Edit the fields on the left, then click Print Card</p>
+  </div>
+  <button class="btn-print" onclick="window.print()">Print Card</button>
+</header>
+
+<div class="editor-body">
+
+  <div class="form-panel">
+
+    <div class="field-group">
+      <label for="input-day">Day of the Week</label>
+      <input type="text" id="input-day" placeholder="e.g. Monday">
+    </div>
+
+    <div class="field-group">
+      <label for="input-event">Event Name</label>
+      <input type="text" id="input-event" placeholder="e.g. Family Reunion 2026">
+    </div>
+
+    <hr class="divider">
+
+    <div>
+      <p class="section-label">Announcements</p>
+      <p class="hint">One announcement per box. Wrap text in *asterisks* to italicize it.</p>
+    </div>
+
+    <div class="announcements-list" id="ann-list"></div>
+
+    <button class="btn-add" id="btn-add">+ Add announcement</button>
+
+  </div>
+
+  <div class="preview-panel">
+    <div class="card-wrap">
+      <div class="card">
+        <header class="card-header">
+          <div class="eyebrow">Miles of Music</div>
+          <h1 class="card-title">Today's<br>Announcements</h1>
+          <hr class="card-rule">
+          <p class="card-instruction">Please read these aloud at your tables</p>
+        </header>
+        <main class="card-body" id="card-body"></main>
+        <footer class="card-footer">
+          <span id="card-day"></span>
+          <span id="card-event"></span>
+        </footer>
+      </div>
+      <div class="card-arc tl"></div>
+      <div class="card-arc tr"></div>
+      <div class="card-arc bl"></div>
+      <div class="card-arc br"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const INITIAL_ANNOUNCEMENTS = [
+    "Sign ups for live band karaoke will be posted at 9AM at the main house. *(Expect these to fill up by lunchtime!)*",
+    "A friendly reminder to limit phone use as much as possible outside of your cabin.",
+    "If anyone needs to leave before 9AM on Friday, please talk to Lauren.",
+    "Conversation starter: what’s a venue you’d love to play someday?",
+  ];
+
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+  // Pre-fill fields
+  document.getElementById('input-day').value = DAYS[new Date().getDay()];
+  document.getElementById('input-event').value = 'Family Reunion 2026';
+
+  // Wire footer inputs
+  document.getElementById('input-day').addEventListener('input', updateFooter);
+  document.getElementById('input-event').addEventListener('input', updateFooter);
+  document.getElementById('btn-add').addEventListener('click', () => {
+    addRow('');
+    focusLast();
+  });
+
+  // Seed initial rows
+  INITIAL_ANNOUNCEMENTS.forEach(text => addRow(text));
+
+  updateFooter();
+  updateCard();
+
+  // ---- Functions ----
+
+  function updateFooter() {
+    document.getElementById('card-day').textContent =
+      document.getElementById('input-day').value || 'Day';
+    document.getElementById('card-event').textContent =
+      document.getElementById('input-event').value || 'Event';
+  }
+
+  function addRow(text) {
+    const list = document.getElementById('ann-list');
+    const row = document.createElement('div');
+    row.className = 'ann-row';
+
+    const ta = document.createElement('textarea');
+    ta.rows = 2;
+    ta.value = text;
+    ta.placeholder = 'Type an announcement…';
+    ta.addEventListener('input', updateCard);
+
+    const btn = document.createElement('button');
+    btn.className = 'btn-remove';
+    btn.title = 'Remove this announcement';
+    btn.textContent = '×';
+    btn.addEventListener('click', () => { row.remove(); updateCard(); });
+
+    row.appendChild(ta);
+    row.appendChild(btn);
+    list.appendChild(row);
+    updateCard();
+  }
+
+  function focusLast() {
+    const rows = document.querySelectorAll('.ann-row textarea');
+    if (rows.length) rows[rows.length - 1].focus();
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // *text* → <em>text</em>  (applied after HTML escaping, so safe)
+  function applyItalics(str) {
+    return str.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+  }
+
+  function updateCard() {
+    const body = document.getElementById('card-body');
+    const items = [...document.querySelectorAll('.ann-row textarea')]
+      .map(t => t.value.trim())
+      .filter(Boolean);
+
+    body.innerHTML = items
+      .map(t => `<div class="ann">
+        <span class="ann-mark">—</span>
+        <p class="ann-text">${applyItalics(escapeHtml(t))}</p>
+      </div>`)
+      .join('');
+  }
+</script>
+
+</body>
+</html>
