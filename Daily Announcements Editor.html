@@ -5,7 +5,7 @@
 <title>Daily Announcements — Editor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Caveat:wght@700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; }
 
@@ -47,10 +47,11 @@
     font-size: 9.5pt;
     opacity: .6;
   }
+  .btn-group { display: flex; gap: 10px; flex-shrink: 0; }
   .btn-print {
     background: #c8a96e;
     color: #1a1a1a;
-    border: none;
+    border: 1.5px solid transparent;
     padding: 10px 26px;
     font-size: 11pt;
     font-weight: 700;
@@ -58,9 +59,21 @@
     cursor: pointer;
     letter-spacing: .04em;
     white-space: nowrap;
-    flex-shrink: 0;
   }
   .btn-print:hover { background: #b89660; }
+  .btn-print-letter {
+    background: transparent;
+    color: #f0ede8;
+    border: 1.5px solid rgba(240,237,232,.45);
+    padding: 10px 20px;
+    font-size: 11pt;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: .04em;
+    white-space: nowrap;
+  }
+  .btn-print-letter:hover { border-color: #f0ede8; background: rgba(240,237,232,.08); }
 
   /* ---- Two-column layout ---- */
   .editor-body {
@@ -136,12 +149,37 @@
   }
   .ann-row {
     display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .ann-row-top {
+    display: flex;
     gap: 7px;
     align-items: flex-start;
   }
-  .ann-row textarea {
+  .ann-row-top textarea {
     flex: 1;
     min-height: 56px;
+  }
+  .ann-row-footer {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding-left: 2px;
+  }
+  .ann-row-footer label {
+    font-size: 8.5pt;
+    color: #888;
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+  }
+  .ann-row-footer input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
+    margin: 0;
+    accent-color: #c8a96e;
   }
   .btn-remove {
     background: none;
@@ -293,8 +331,30 @@
     font-size: 12pt;
     line-height: 1.38;
     margin: 0;
+    flex: 1;
   }
   .ann-text em { font-style: italic; }
+
+  /* ===== JUST FOR FUN TAG ===== */
+  .just-for-fun {
+    font-family: "Caveat", cursive;
+    font-size: 13pt;
+    font-weight: 700;
+    color: #1a1a1a;
+    background: #efefef;
+    border: 1.8px solid #555;
+    border-radius: 3px;
+    padding: 1px 9px 3px;
+    flex: none;
+    align-self: center;
+    transform: rotate(-3deg);
+    display: inline-block;
+    white-space: nowrap;
+    box-shadow: 1px 2px 0 rgba(0,0,0,.25);
+    line-height: 1.3;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
   .card-footer {
     border-top: 2.5px solid var(--ink);
     padding: .1in .48in;
@@ -316,6 +376,23 @@
     .card-wrap { box-shadow: none; margin-top: .15in; height: calc(7in - .15in); width: 5in; }
     .card { background: var(--paper-print); -webkit-mask: none; mask: none; }
     .card-arc { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff; }
+
+    /* 8.5×11 letter print — card scaled to fill page (scale = 10in/7in ≈ 1.4286) */
+    body.print-letter,
+    body.print-letter .editor-body,
+    body.print-letter .preview-panel { overflow: hidden; }
+    body.print-letter .preview-panel {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 0;
+    }
+    body.print-letter .card-wrap {
+      zoom: 1.38;
+      margin: 0 auto;
+      width: 5in;
+      height: 7in;
+    }
   }
 </style>
 </head>
@@ -326,7 +403,10 @@
     <h1>Daily Announcements — Editor</h1>
     <p>Miles of Music &middot; Edit the fields on the left, then click Print Card</p>
   </div>
-  <button class="btn-print" onclick="window.print()">Print Card</button>
+  <div class="btn-group">
+    <button class="btn-print-letter" onclick="printLetter()">Print 8.5 × 11</button>
+    <button class="btn-print" onclick="window.print()">Print Card (5×7)</button>
+  </div>
 </header>
 
 <div class="editor-body">
@@ -361,9 +441,9 @@
       <div class="card">
         <header class="card-header">
           <div class="eyebrow">Miles of Music</div>
-          <h1 class="card-title">Today's<br>Announcements</h1>
+          <h1 class="card-title">Announcements</h1>
           <hr class="card-rule">
-          <p class="card-instruction">Please read these aloud at your tables</p>
+          <p class="card-instruction">Have something to announce? <br> Put it in the box by the bulletin board by the end of lunch on the day you want to announce it.</p>
         </header>
         <main class="card-body" id="card-body"></main>
         <footer class="card-footer">
@@ -381,6 +461,17 @@
 </div>
 
 <script>
+  function printLetter() {
+    const style = document.createElement('style');
+    style.id = 'letter-page-override';
+    style.textContent = '@page { size: letter portrait; margin: 0.5in; }';
+    document.head.appendChild(style);
+    document.body.classList.add('print-letter');
+    window.print();
+    document.body.classList.remove('print-letter');
+    style.remove();
+  }
+
   const INITIAL_ANNOUNCEMENTS = [
     "Sign ups for live band karaoke will be posted at 9AM at the main house. *(Expect these to fill up by lunchtime!)*",
     "A friendly reminder to limit phone use as much as possible outside of your cabin.",
@@ -402,8 +493,8 @@
     focusLast();
   });
 
-  // Seed initial rows
-  INITIAL_ANNOUNCEMENTS.forEach(text => addRow(text));
+  // Seed initial rows (pre-check Just for Fun on the last item)
+  INITIAL_ANNOUNCEMENTS.forEach((text, i) => addRow(text, i === INITIAL_ANNOUNCEMENTS.length - 1));
 
   updateFooter();
   updateCard();
@@ -417,10 +508,13 @@
       document.getElementById('input-event').value || 'Event';
   }
 
-  function addRow(text) {
+  function addRow(text, justForFun = false) {
     const list = document.getElementById('ann-list');
     const row = document.createElement('div');
     row.className = 'ann-row';
+
+    const top = document.createElement('div');
+    top.className = 'ann-row-top';
 
     const ta = document.createElement('textarea');
     ta.rows = 2;
@@ -432,12 +526,41 @@
     btn.className = 'btn-remove';
     btn.title = 'Remove this announcement';
     btn.textContent = '×';
-    btn.addEventListener('click', () => { row.remove(); updateCard(); });
+    btn.addEventListener('click', () => { row.remove(); updateLastRowCheckbox(); updateCard(); });
 
-    row.appendChild(ta);
-    row.appendChild(btn);
+    top.appendChild(ta);
+    top.appendChild(btn);
+
+    const footer = document.createElement('div');
+    footer.className = 'ann-row-footer';
+
+    const cbId = 'cb-just-for-fun';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.id = cbId;
+    cb.checked = justForFun;
+    cb.addEventListener('change', updateCard);
+
+    const lbl = document.createElement('label');
+    lbl.htmlFor = cbId;
+    lbl.textContent = 'Show "Just for fun!" tag';
+
+    footer.appendChild(cb);
+    footer.appendChild(lbl);
+
+    row.appendChild(top);
+    row.appendChild(footer);
     list.appendChild(row);
+    updateLastRowCheckbox();
     updateCard();
+  }
+
+  function updateLastRowCheckbox() {
+    const rows = document.querySelectorAll('.ann-row');
+    rows.forEach((row, i) => {
+      const footer = row.querySelector('.ann-row-footer');
+      if (footer) footer.style.display = i === rows.length - 1 ? 'flex' : 'none';
+    });
   }
 
   function focusLast() {
@@ -460,15 +583,24 @@
 
   function updateCard() {
     const body = document.getElementById('card-body');
-    const items = [...document.querySelectorAll('.ann-row textarea')]
-      .map(t => t.value.trim())
-      .filter(Boolean);
+    const rows = [...document.querySelectorAll('.ann-row')];
+    const items = rows
+      .map(row => ({
+        text: row.querySelector('textarea').value.trim(),
+        justForFun: (row.querySelector('input[type="checkbox"]') || {}).checked || false,
+      }))
+      .filter(item => item.text);
 
     body.innerHTML = items
-      .map(t => `<div class="ann">
-        <span class="ann-mark">—</span>
-        <p class="ann-text">${applyItalics(escapeHtml(t))}</p>
-      </div>`)
+      .map((item, i) => {
+        const isLast = i === items.length - 1;
+        const tag = isLast && item.justForFun ? '<span class="just-for-fun">Just for fun!</span>' : '';
+        return `<div class="ann">
+          <span class="ann-mark">—</span>
+          <p class="ann-text">${applyItalics(escapeHtml(item.text))}</p>
+          ${tag}
+        </div>`;
+      })
       .join('');
   }
 </script>

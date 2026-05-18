@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Miles of Music — Daily Announcements</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #000;
+    --paper: #fafaf6;
+    --paper-print: #ffffff;
+    --notch: .26in;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #2a2a28;
+    color: var(--ink);
+    font-family: "Crimson Text", Georgia, serif;
+    line-height: 1.35;
+  }
+
+  .stage {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 48px 24px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    align-items: center;
+  }
+
+  .legend {
+    color: #d8d4c4;
+    font-family: "Special Elite", ui-monospace, monospace;
+    font-size: 11pt;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .legend .dot { width: 6px; height: 6px; border-radius: 50%; background: #d8d4c4; display: inline-block; }
+
+  /* ===== CARD WRAPPER (holds masked card + arc overlays) ===== */
+  .card-wrap {
+    position: relative;
+    width: 5in;
+    height: 7in;
+    box-shadow: 0 30px 60px rgba(0,0,0,.45), 0 2px 0 rgba(0,0,0,.6);
+  }
+
+  .card {
+    width: 100%;
+    height: 100%;
+    background: var(--paper);
+    border: 2.5px solid var(--ink);
+    /* notched corners */
+    -webkit-mask:
+      radial-gradient(circle var(--notch) at top left,     transparent calc(var(--notch) - .6px), #000 var(--notch)) top left      /50.01% 50.01% no-repeat,
+      radial-gradient(circle var(--notch) at top right,    transparent calc(var(--notch) - .6px), #000 var(--notch)) top right     /50.01% 50.01% no-repeat,
+      radial-gradient(circle var(--notch) at bottom left,  transparent calc(var(--notch) - .6px), #000 var(--notch)) bottom left   /50.01% 50.01% no-repeat,
+      radial-gradient(circle var(--notch) at bottom right, transparent calc(var(--notch) - .6px), #000 var(--notch)) bottom right  /50.01% 50.01% no-repeat;
+          mask:
+      radial-gradient(circle var(--notch) at top left,     transparent calc(var(--notch) - .6px), #000 var(--notch)) top left      /50.01% 50.01% no-repeat,
+      radial-gradient(circle var(--notch) at top right,    transparent calc(var(--notch) - .6px), #000 var(--notch)) top right     /50.01% 50.01% no-repeat,
+      radial-gradient(circle var(--notch) at bottom left,  transparent calc(var(--notch) - .6px), #000 var(--notch)) bottom left   /50.01% 50.01% no-repeat,
+      radial-gradient(circle var(--notch) at bottom right, transparent calc(var(--notch) - .6px), #000 var(--notch)) bottom right  /50.01% 50.01% no-repeat;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Arc stroke overlays — visible on screen, painted white in print so the notch reads correctly */
+  .card-arc {
+    position: absolute;
+    width: calc(2 * var(--notch));
+    height: calc(2 * var(--notch));
+    border: 2.5px solid var(--ink);
+    border-radius: 50%;
+    pointer-events: none;
+    background: transparent;
+  }
+  .card-arc.tl { top: calc(-1 * var(--notch)); left: calc(-1 * var(--notch)); clip-path: inset(50% 0 0 50%); }
+  .card-arc.tr { top: calc(-1 * var(--notch)); right: calc(-1 * var(--notch)); clip-path: inset(50% 50% 0 0); }
+  .card-arc.bl { bottom: calc(-1 * var(--notch)); left: calc(-1 * var(--notch)); clip-path: inset(0 0 50% 50%); }
+  .card-arc.br { bottom: calc(-1 * var(--notch)); right: calc(-1 * var(--notch)); clip-path: inset(0 50% 50% 0); }
+
+  /* ===== HEADER ===== */
+  .card-header {
+    padding: .34in .48in .3in;
+    border-bottom: 2.5px solid var(--ink);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .07in;
+  }
+
+  .eyebrow {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: "Special Elite", monospace;
+    font-size: 8.5pt;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .eyebrow::before, .eyebrow::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--ink);
+  }
+
+  .card-title {
+    margin: .03in 0 0;
+    font-family: "Crimson Text", serif;
+    font-weight: 600;
+    font-size: 27pt;
+    line-height: 1.05;
+    text-align: center;
+    letter-spacing: .005em;
+  }
+
+  .card-rule {
+    width: 1.6in;
+    border: none;
+    border-top: 1.5px solid var(--ink);
+    margin: .05in 0 .02in;
+  }
+
+  .card-instruction {
+    margin: 0;
+    font-family: "Special Elite", monospace;
+    font-size: 9pt;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+   /* ===== ANNOUNCEMENTS ===== */
+  .card-body {
+    flex: 1;
+    padding: .14in .48in .18in;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+  }
+
+  .ann {
+    display: flex;
+    gap: .14in;
+    align-items: flex-start;
+    padding: .1in 0;
+    border-bottom: 1px solid rgba(0,0,0,.14);
+  }
+  .ann:last-child { border-bottom: none; }
+
+  .ann-mark {
+    font-family: "Special Elite", monospace;
+    font-size: 11pt;
+    flex: none;
+    line-height: 1.38;
+    user-select: none;
+  }
+
+  .ann-text {
+    font-family: "Crimson Text", serif;
+    font-size: 12pt;
+    line-height: 1.38;
+    margin: 0;
+    flex: 1;
+  }
+  .ann-text em { font-style: italic; }
+
+  /* ===== JUST FOR FUN TAG ===== */
+  .just-for-fun {
+    font-family: "Caveat", cursive;
+    font-size: 13pt;
+    font-weight: 700;
+    color: #1a1a1a;
+    background: #efefef;
+    border: 1.8px solid #555;
+    border-radius: 3px;
+    padding: 1px 9px 3px;
+    flex: none;
+    align-self: center;
+    transform: rotate(-3deg);
+    display: inline-block;
+    white-space: nowrap;
+    box-shadow: 1px 2px 0 rgba(0,0,0,.25);
+    line-height: 1.3;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ===== FOOTER ===== */
+  .card-footer {
+    border-top: 2.5px solid var(--ink);
+    padding: .1in .48in;
+    display: flex;
+    justify-content: space-between;
+    font-family: "Special Elite", monospace;
+    font-size: 8pt;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+  }
+
+  /* ===== PRINT ===== */
+  @media print {
+    @page { size: 5in 7in; margin: 0; }
+    html, body { background: #fff; }
+    .stage { padding: 0; gap: 0; }
+    .legend { display: none; }
+    .card-wrap { box-shadow: none; margin-top: .15in; height: calc(7in - .15in); }
+    .card { background: var(--paper-print); -webkit-mask: none; mask: none; }
+    .card-arc {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      background: #fff;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <div class="legend">
+    <span class="dot"></span>
+    Miles of Music · Daily Announcements · 5 × 7 in
+    <span class="dot"></span>
+  </div>
+
+  <div class="card-wrap">
+    <div class="card">
+
+      <header class="card-header">
+        <div class="eyebrow">Miles of Music</div>
+        <h1 class="card-title">Announcements</h1>
+        <hr class="card-rule">
+        <p class="card-instruction">Have something to announce? <br> Put it in the box by the bulletin board by the end of lunch on the day you want to announce it.</p>
+      </header>
+
+      <main class="card-body">
+
+        <div class="ann">
+          <span class="ann-mark">—</span>
+          <p class="ann-text">Sign ups for live band karaoke will be posted at 9AM at the main house. <em>(Expect these to fill up by lunchtime!)</em></p>
+        </div>
+
+        <div class="ann">
+          <span class="ann-mark">—</span>
+          <p class="ann-text">A friendly reminder to limit phone use as much as possible outside of your cabin.</p>
+        </div>
+
+        <div class="ann">
+          <span class="ann-mark">—</span>
+          <p class="ann-text">If anyone needs to leave before 9AM on Friday, please talk to Lauren.</p>
+        </div>
+
+        <div class="ann">
+          <span class="ann-mark">—</span>
+          <p class="ann-text">Conversation starter: what's a venue you'd love to play someday?</p>
+          <span class="just-for-fun">Just for fun!</span>
+        </div>
+
+      </main>
+
+      <footer class="card-footer">
+        <span>Monday</span>
+        <span>Family Reunion 2026</span>
+      </footer>
+
+    </div>
+    <div class="card-arc tl"></div>
+    <div class="card-arc tr"></div>
+    <div class="card-arc bl"></div>
+    <div class="card-arc br"></div>
+  </div>
+
+  <div class="legend">
+    <span class="dot"></span>
+    Print on 5×7 card stock · update bullets each morning before printing
+    <span class="dot"></span>
+  </div>
+
+</div>
+
+</body>
+</html>
