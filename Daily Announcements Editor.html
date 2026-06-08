@@ -381,13 +381,15 @@
 
   /* ---- Print ---- */
   @media print {
-    @page { size: 5in 7in; margin: .15in .25in; }
+    @page { size: 5in 7in; margin: 0; }
     .editor-header, .form-panel { display: none !important; }
     .editor-body { display: block; min-height: 0; }
-    .preview-panel { padding: 0; display: block; background: #fff; }
+    /* margin:0 on @page gives the full 5x7 sheet; center the card on the paper
+       with flex so the .12in insets stay balanced regardless of browser/printer. */
+    .preview-panel { padding: 0; display: flex; justify-content: center; align-items: center; height: 7in; background: #fff; }
     html, body { background: #fff; width: 5in; overflow: hidden; }
     /* overflow:hidden clips the corner arc elements that extend .26in outside the box */
-    .card-wrap { box-shadow: none; margin: 0; height: calc(7in - .30in); width: calc(5in - .50in); overflow: hidden; }
+    .card-wrap { box-shadow: none; margin: 0; height: calc(7in - .24in); width: calc(5in - .24in); overflow: hidden; }
     .card { background: var(--paper-print); -webkit-mask: none; mask: none; }
     .card-arc { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff; }
 
