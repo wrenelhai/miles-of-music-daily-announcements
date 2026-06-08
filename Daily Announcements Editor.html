@@ -368,13 +368,13 @@
 
   /* ---- Print ---- */
   @media print {
-    @page { size: 5in 7in; margin: 0; }
+    @page { size: 5in 7in; margin: .15in .12in; }
     .editor-header, .form-panel { display: none !important; }
     .editor-body { display: block; min-height: 0; }
     .preview-panel { padding: 0; display: block; background: #fff; }
     html, body { background: #fff; width: 5in; overflow: hidden; }
     /* overflow:hidden clips the corner arc elements that extend .26in outside the box */
-    .card-wrap { box-shadow: none; margin: .90in .12in 0; height: calc(7in - .90in); width: calc(5in - .24in); overflow: hidden; }
+    .card-wrap { box-shadow: none; margin: 0; height: calc(7in - .30in); width: calc(5in - .24in); overflow: hidden; }
     .card { background: var(--paper-print); -webkit-mask: none; mask: none; }
     .card-arc { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff; }
 
@@ -471,11 +471,19 @@
 
     const fontLinks = [...document.querySelectorAll('link')].map(l => l.outerHTML).join('\n');
     const styles = document.querySelector('style').textContent;
+    const previewHTML = document.querySelector('.preview-panel').innerHTML;
     popup.document.write(`<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><title></title>
 ${fontLinks}
-<style>${styles}</style>
-</head><body>${document.querySelector('.preview-panel').innerHTML}</body></html>`);
+<style>${styles}
+@media print {
+  .page-back { page-break-before: always; break-before: page; }
+}
+</style>
+</head><body>
+<div class="preview-panel">${previewHTML}</div>
+<div class="preview-panel page-back">${previewHTML}</div>
+</body></html>`);
     popup.document.close();
     popup.document.fonts.ready.then(() => { popup.print(); popup.close(); });
   }
