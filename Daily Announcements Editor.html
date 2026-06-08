@@ -373,9 +373,8 @@
     .editor-body { display: block; min-height: 0; }
     .preview-panel { padding: 0; display: block; background: #fff; }
     html, body { background: #fff; width: 5in; overflow: hidden; }
-    /* overflow:hidden keeps the corner arc elements (positioned -0.26in outside the box)
-       from inflating the browser's layout width past 5in, which caused right-side cutoff */
-    .card-wrap { box-shadow: none; margin: .15in .12in .15in; height: calc(7in - .30in); width: calc(5in - .24in); overflow: hidden; }
+    /* overflow:hidden clips the corner arc elements that extend .26in outside the box */
+    .card-wrap { box-shadow: none; margin: .90in .12in 0; height: calc(7in - .90in); width: calc(5in - .24in); overflow: hidden; }
     .card { background: var(--paper-print); -webkit-mask: none; mask: none; }
     .card-arc { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff; }
 
@@ -407,7 +406,7 @@
   </div>
   <div class="btn-group">
     <button class="btn-print-letter" onclick="printLetter()">Print 8.5 × 11</button>
-    <button class="btn-print" onclick="window.print()">Print Card (5×7)</button>
+    <button class="btn-print" onclick="printCard5x7()">Print Card (5×7)</button>
   </div>
 </header>
 
@@ -463,6 +462,24 @@
 </div>
 
 <script>
+  function printCard5x7() {
+    // Open a blank popup — no URL means no browser header in Chrome or Safari.
+    // @page { margin: 0 } then works cleanly without any browser chrome intruding.
+    const popup = window.open('', '_blank',
+      'toolbar=0,location=0,menubar=0,status=0,scrollbars=0');
+    if (!popup) { window.print(); return; } // fallback if popup is blocked
+
+    const fontLinks = [...document.querySelectorAll('link')].map(l => l.outerHTML).join('\n');
+    const styles = document.querySelector('style').textContent;
+    popup.document.write(`<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title></title>
+${fontLinks}
+<style>${styles}</style>
+</head><body>${document.querySelector('.preview-panel').innerHTML}</body></html>`);
+    popup.document.close();
+    popup.document.fonts.ready.then(() => { popup.print(); popup.close(); });
+  }
+
   function printLetter() {
     const style = document.createElement('style');
     style.id = 'letter-page-override';
