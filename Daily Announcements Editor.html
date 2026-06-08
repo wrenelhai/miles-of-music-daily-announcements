@@ -74,6 +74,19 @@
     white-space: nowrap;
   }
   .btn-print-letter:hover { border-color: #f0ede8; background: rgba(240,237,232,.08); }
+  .btn-reset {
+    background: transparent;
+    color: rgba(240,237,232,.5);
+    border: 1.5px solid transparent;
+    padding: 10px 14px;
+    font-size: 10pt;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    letter-spacing: .04em;
+    white-space: nowrap;
+  }
+  .btn-reset:hover { color: #f0ede8; border-color: rgba(240,237,232,.3); }
 
   /* ---- Two-column layout ---- */
   .editor-body {
@@ -405,6 +418,7 @@
     <p>Miles of Music &middot; Edit the fields on the left, then click Print Card</p>
   </div>
   <div class="btn-group">
+    <button class="btn-reset" onclick="resetToDefaults()" title="Clear saved data and restore sample announcements">Reset</button>
     <button class="btn-print-letter" onclick="printLetter()">Print 8.5 × 11</button>
     <button class="btn-print" onclick="printCard5x7()">Print Card (5×7)</button>
   </div>
@@ -508,6 +522,11 @@ ${fontLinks}
 
   const DAYS = [‘Sunday’,’Monday’,’Tuesday’,’Wednesday’,’Thursday’,’Friday’,’Saturday’];
 
+  function resetToDefaults() {
+    sessionStorage.removeItem('announcements-editor');
+    location.reload();
+  }
+
   function saveState() {
     const rows = [...document.querySelectorAll(‘.ann-row’)];
     const state = {
@@ -531,8 +550,9 @@ ${fontLinks}
   }
 
   const saved = loadState();
+  const hasMeaningfulSave = saved && Array.isArray(saved.announcements) && saved.announcements.length > 0;
 
-  if (saved) {
+  if (hasMeaningfulSave) {
     document.getElementById(‘input-day’).value = saved.day;
     document.getElementById(‘input-event’).value = saved.event;
     saved.announcements.forEach(ann => addRow(ann.text, ann.justForFun));
