@@ -499,7 +499,13 @@ ${fontLinks}
 <div class="preview-panel page-back">${previewHTML}</div>
 </body></html>`);
     popup.document.close();
-    popup.document.fonts.ready.then(() => { popup.print(); popup.close(); });
+    // fonts.ready can hang in some browsers for a blank popup; use a timeout fallback.
+    let printed = false;
+    const doPrint = () => { if (printed) return; printed = true; popup.print(); popup.close(); };
+    if (popup.document.fonts && popup.document.fonts.ready) {
+      popup.document.fonts.ready.then(doPrint);
+    }
+    setTimeout(doPrint, 1200);
   }
 
   function printLetter() {
@@ -523,21 +529,23 @@ ${fontLinks}
   const DAYS = [‘Sunday’,’Monday’,’Tuesday’,’Wednesday’,’Thursday’,’Friday’,’Saturday’];
 
   function resetToDefaults() {
-    sessionStorage.removeItem('announcements-editor');
+    try { sessionStorage.removeItem(‘announcements-editor’); } catch (e) {}
     location.reload();
   }
 
   function saveState() {
-    const rows = [...document.querySelectorAll(‘.ann-row’)];
-    const state = {
-      day: document.getElementById(‘input-day’).value,
-      event: document.getElementById(‘input-event’).value,
-      announcements: rows.map(row => ({
-        text: row.querySelector(‘textarea’).value,
-        justForFun: (row.querySelector(‘input[type="checkbox"]’) || {}).checked || false,
-      })),
-    };
-    sessionStorage.setItem(‘announcements-editor’, JSON.stringify(state));
+    try {
+      const rows = [...document.querySelectorAll(‘.ann-row’)];
+      const state = {
+        day: document.getElementById(‘input-day’).value,
+        event: document.getElementById(‘input-event’).value,
+        announcements: rows.map(row => ({
+          text: row.querySelector(‘textarea’).value,
+          justForFun: (row.querySelector(‘input[type="checkbox"]’) || {}).checked || false,
+        })),
+      };
+      sessionStorage.setItem(‘announcements-editor’, JSON.stringify(state));
+    } catch (e) {}
   }
 
   function loadState() {
