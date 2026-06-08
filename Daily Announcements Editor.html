@@ -526,31 +526,31 @@ ${fontLinks}
     "Conversation starter: what’s a venue you’d love to play someday?",
   ];
 
-  const DAYS = [‘Sunday’,’Monday’,’Tuesday’,’Wednesday’,’Thursday’,’Friday’,’Saturday’];
+  const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
   function resetToDefaults() {
-    try { sessionStorage.removeItem(‘announcements-editor’); } catch (e) {}
+    try { sessionStorage.removeItem('announcements-editor'); } catch (e) {}
     location.reload();
   }
 
   function saveState() {
     try {
-      const rows = [...document.querySelectorAll(‘.ann-row’)];
+      const rows = [...document.querySelectorAll('.ann-row')];
       const state = {
-        day: document.getElementById(‘input-day’).value,
-        event: document.getElementById(‘input-event’).value,
+        day: document.getElementById('input-day').value,
+        event: document.getElementById('input-event').value,
         announcements: rows.map(row => ({
-          text: row.querySelector(‘textarea’).value,
-          justForFun: (row.querySelector(‘input[type="checkbox"]’) || {}).checked || false,
+          text: row.querySelector('textarea').value,
+          justForFun: (row.querySelector('input[type="checkbox"]') || {}).checked || false,
         })),
       };
-      sessionStorage.setItem(‘announcements-editor’, JSON.stringify(state));
+      sessionStorage.setItem('announcements-editor', JSON.stringify(state));
     } catch (e) {}
   }
 
   function loadState() {
     try {
-      const raw = sessionStorage.getItem(‘announcements-editor’);
+      const raw = sessionStorage.getItem('announcements-editor');
       return raw ? JSON.parse(raw) : null;
     } catch (e) {
       return null;
@@ -561,20 +561,20 @@ ${fontLinks}
   const hasMeaningfulSave = saved && Array.isArray(saved.announcements) && saved.announcements.length > 0;
 
   if (hasMeaningfulSave) {
-    document.getElementById(‘input-day’).value = saved.day;
-    document.getElementById(‘input-event’).value = saved.event;
+    document.getElementById('input-day').value = saved.day;
+    document.getElementById('input-event').value = saved.event;
     saved.announcements.forEach(ann => addRow(ann.text, ann.justForFun));
   } else {
-    document.getElementById(‘input-day’).value = DAYS[new Date().getDay()];
-    document.getElementById(‘input-event’).value = ‘Family Reunion 2026’;
+    document.getElementById('input-day').value = DAYS[new Date().getDay()];
+    document.getElementById('input-event').value = 'Family Reunion 2026';
     INITIAL_ANNOUNCEMENTS.forEach((text, i) => addRow(text, i === INITIAL_ANNOUNCEMENTS.length - 1));
   }
 
   // Wire footer inputs
-  document.getElementById(‘input-day’).addEventListener(‘input’, updateFooter);
-  document.getElementById(‘input-event’).addEventListener(‘input’, updateFooter);
-  document.getElementById(‘btn-add’).addEventListener(‘click’, () => {
-    addRow(‘’);
+  document.getElementById('input-day').addEventListener('input', updateFooter);
+  document.getElementById('input-event').addEventListener('input', updateFooter);
+  document.getElementById('btn-add').addEventListener('click', () => {
+    addRow('');
     focusLast();
   });
 
