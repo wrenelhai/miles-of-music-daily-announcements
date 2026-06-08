@@ -372,8 +372,10 @@
     .editor-header, .form-panel { display: none !important; }
     .editor-body { display: block; min-height: 0; }
     .preview-panel { padding: 0; display: block; background: #fff; }
-    html, body { background: #fff; }
-    .card-wrap { box-shadow: none; margin-top: .15in; height: calc(7in - .15in); width: 5in; }
+    html, body { background: #fff; width: 5in; overflow: hidden; }
+    /* overflow:hidden keeps the corner arc elements (positioned -0.26in outside the box)
+       from inflating the browser's layout width past 5in, which caused right-side cutoff */
+    .card-wrap { box-shadow: none; margin: 0 auto; height: 7in; width: 5in; overflow: hidden; }
     .card { background: var(--paper-print); -webkit-mask: none; mask: none; }
     .card-arc { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff; }
 
