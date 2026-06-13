@@ -301,7 +301,9 @@
     margin: 0;
     font-family: "Special Elite", monospace;
     font-size: 11pt;
-    letter-spacing: .1em;
+    /* .04em (vs the usual typewriter .1em) keeps "Announcements" on line 2 of
+       the instruction at the inset 4.76in card width used by both prints. */
+    letter-spacing: .04em;
     text-transform: uppercase;
     text-align: center;
   }
@@ -392,30 +394,45 @@
     @page { size: 5in 7in; margin: 0; }
     .editor-header, .form-panel { display: none !important; }
     .editor-body { display: block; min-height: 0; }
+    html { background: #fff; }
     /* margin:0 on @page gives the full 5x7 sheet; center the card on the paper
        with flex so the .12in insets stay balanced regardless of browser/printer. */
     .preview-panel { padding: 0; display: flex; justify-content: center; align-items: center; height: 7in; background: #fff; }
-    html, body { background: #fff; width: 5in; overflow: hidden; }
-    /* overflow:hidden clips the corner arc elements that extend .26in outside the box */
+    /* Constrain to the 5in sheet on <body> only — NOT <html> — so the letter
+       overrides below can release it. overflow:hidden clips the corner arc
+       elements that extend .26in outside the box. */
+    body { background: #fff; width: 5in; overflow: hidden; }
     .card-wrap { box-shadow: none; margin: 0; height: calc(7in - .24in); width: calc(5in - .24in); overflow: hidden; }
     .card { background: var(--paper-print); -webkit-mask: none; mask: none; }
     .card-arc { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff; }
 
-    /* 8.5×11 letter print — card scaled to fill page (scale = 10in/7in ≈ 1.4286) */
-    body.print-letter,
-    body.print-letter .editor-body,
-    body.print-letter .preview-panel { overflow: hidden; }
+    /* ===== 8.5×11 letter print =====
+       printLetter() adds .print-letter and injects an @page letter override.
+       These rules must fully undo the 5in-wide clamp above, otherwise the
+       scaled-up card is clipped on the sides (and scaling it larger only
+       clips more). zoom 1.4 takes the 5in×7in card to 7in×9.8in, which fits
+       a letter sheet minus the .5in margins (7.5in × 10in printable). */
+    body.print-letter { width: auto; overflow: visible; }
+    body.print-letter .editor-body { overflow: visible; }
     body.print-letter .preview-panel {
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
+      display: block;     /* plain block so margin:auto centers the card box */
       padding: 0;
+      height: auto;
+      overflow: visible;
     }
+    /* transform: scale (not zoom) so the card is laid out at its native 5in
+       size — exactly like the 5×7 print — and only then magnified. zoom would
+       re-flow the text at the enlarged size, landing line breaks on different
+       words; transform makes the 8.5×11 a faithful enlargement of the 5×7, so
+       the instruction (and everything else) wraps identically in both. */
     body.print-letter .card-wrap {
-      zoom: 1.38;
+      transform: scale(1.4);
+      transform-origin: top center;
       margin: 0 auto;
-      width: 5in;
-      height: 7in;
+      /* width/height inherited from the 5×7 .card-wrap rule above (the inset
+         calc(5in - .24in) box), so the card — and every line break — is
+         identical to the 5×7 print. */
+      overflow: hidden;   /* same clean rectangle border as the 5×7 print */
     }
   }
 </style>
@@ -467,7 +484,7 @@
         <header class="card-header">
           <h1 class="card-title">Announcements</h1>
           <hr class="card-rule">
-          <p class="card-instruction">Have something to announce at dinner? <br> Put it in the bag on the announcements board by the end of lunch.</p>
+          <p class="card-instruction">Have something to announce at dinner? Put it in the bag on the announcements board by the end of lunch.</p>
           <div class="card-weather-line" id="card-weather-line">
             <span class="card-weather-label">Tomorrow's weather:</span>
             <span class="card-weather" id="card-weather" title="Tomorrow's forecast"></span>
@@ -512,7 +529,20 @@ ${fontLinks}
 <div class="preview-panel page-back">${previewHTML}</div>
 </body></html>`);
     popup.document.close();
-    // fonts.ready can hang in some browsers for a blank popup; use a timeout fallback.
+
+    // The parent already has Special Elite / Crimson Text / Caveat loaded and
+    // working (that's why the 8.5×11 print looks right). Hand those loaded
+    // FontFace objects to the popup so its card renders in the real fonts
+    // immediately, instead of flashing the monospace/serif fallback and
+    // printing before the Google Fonts <link> finishes. The fallback is a
+    // wider face, so it also pushed the instruction's line breaks past the
+    // hard-coded <br>. The <link> above stays as a backup if add() is refused.
+    try {
+      document.fonts.forEach(font => { try { popup.document.fonts.add(font); } catch (e) {} });
+    } catch (e) {}
+
+    // fonts.ready can resolve early (or hang) for a written-in popup; the
+    // copied faces are already loaded, so a short timeout fallback is safe.
     let printed = false;
     const doPrint = () => { if (printed) return; printed = true; popup.print(); popup.close(); };
     if (popup.document.fonts && popup.document.fonts.ready) {
