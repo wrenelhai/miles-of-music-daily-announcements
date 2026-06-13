@@ -280,25 +280,13 @@
   .card-arc.br { bottom: calc(-1 * var(--notch)); right: calc(-1 * var(--notch)); clip-path: inset(0 50% 50% 0); }
 
   .card-header {
-    padding: .34in .48in .3in;
+    padding: .17in .48in .13in;
     border-bottom: 2.5px solid var(--ink);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: .07in;
   }
-  .eyebrow {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-family: "Special Elite", monospace;
-    font-size: 8.5pt;
-    letter-spacing: .26em;
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-  .eyebrow::before, .eyebrow::after { content: ""; flex: 1; border-top: 1px solid var(--ink); }
   .card-title {
     margin: .03in 0 0;
     font-family: "Crimson Text", serif;
@@ -312,7 +300,7 @@
   .card-instruction {
     margin: 0;
     font-family: "Special Elite", monospace;
-    font-size: 9pt;
+    font-size: 11pt;
     letter-spacing: .1em;
     text-transform: uppercase;
     text-align: center;
@@ -379,6 +367,26 @@
     text-transform: uppercase;
   }
 
+  /* ===== WEATHER LINE (below the instruction) ===== */
+  .card-weather-line {
+    display: none;            /* revealed by JS once a forecast loads */
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin: .05in 0 0;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 11pt;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .card-weather { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  .card-weather .wx-icon {
+    font-size: 14pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
   /* ---- Print ---- */
   @media print {
     @page { size: 5in 7in; margin: 0; }
@@ -437,7 +445,7 @@
 
     <div class="field-group">
       <label for="input-event">Event Name</label>
-      <input type="text" id="input-event" placeholder="e.g. Family Reunion 2026">
+      <input type="text" id="input-event" placeholder="e.g. Island Camp 2026">
     </div>
 
     <hr class="divider">
@@ -457,10 +465,13 @@
     <div class="card-wrap">
       <div class="card">
         <header class="card-header">
-          <div class="eyebrow">Miles of Music</div>
           <h1 class="card-title">Announcements</h1>
           <hr class="card-rule">
           <p class="card-instruction">Have something to announce at dinner? <br> Put it in the bag on the announcements board by the end of lunch.</p>
+          <div class="card-weather-line" id="card-weather-line">
+            <span class="card-weather-label">Tomorrow's weather:</span>
+            <span class="card-weather" id="card-weather" title="Tomorrow's forecast"></span>
+          </div>
         </header>
         <main class="card-body" id="card-body"></main>
         <footer class="card-footer">
@@ -568,7 +579,7 @@ ${fontLinks}
     saved.announcements.forEach(ann => addRow(ann.text, ann.justForFun));
   } else {
     document.getElementById('input-day').value = DAYS[new Date().getDay()];
-    document.getElementById('input-event').value = 'Family Reunion 2026';
+    document.getElementById('input-event').value = 'Island Camp 2026';
     INITIAL_ANNOUNCEMENTS.forEach((text, i) => addRow(text, i === INITIAL_ANNOUNCEMENTS.length - 1));
   }
 
@@ -689,6 +700,80 @@ ${fontLinks}
       .join('');
     saveState();
   }
+
+  // ---- Weather (tomorrow's forecast for the camp) ----
+
+  const CAMP_LAT = 43.67, CAMP_LON = -71.42;
+  const WEATHER_KEY = 'announcements-weather';
+
+  // Map a WMO weather code (what Open-Meteo returns) to a single emoji.
+  function wmoToEmoji(code) {
+    if (code === 0) return '☀️';                       // clear
+    if (code === 1 || code === 2) return '⛅';          // mainly clear / partly cloudy
+    if (code === 3) return '☁️';                        // overcast
+    if (code === 45 || code === 48) return '🌫️';        // fog
+    if (code >= 51 && code <= 67) return '🌧️';          // drizzle / rain / freezing rain
+    if (code >= 71 && code <= 77) return '❄️';           // snow
+    if (code >= 80 && code <= 82) return '🌧️';          // rain showers
+    if (code >= 85 && code <= 86) return '❄️';           // snow showers
+    if (code >= 95) return '⛈️';                         // thunderstorm
+    return '';
+  }
+
+  // YYYY-MM-DD for tomorrow in local time (matches Open-Meteo's date strings).
+  function tomorrowISO() {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  function renderWeather(w) {
+    const line = document.getElementById('card-weather-line');
+    const el = document.getElementById('card-weather');
+    if (!line || !el) return;
+    const icon = w ? wmoToEmoji(w.code) : '';
+    if (!w || !icon) { line.style.display = 'none'; return; }   // unknown / no data → keep line hidden
+    el.innerHTML =
+      `<span class="wx-icon">${icon}</span>` +
+      `<span class="wx-temps">${w.high}°/${w.low}°</span>`;
+    line.style.display = 'flex';
+  }
+
+  async function loadWeather() {
+    const wanted = tomorrowISO();
+
+    // Show a cached forecast immediately if it's still for tomorrow. This also
+    // keeps the badge correct when offline and when the print popup is opened.
+    try {
+      const cached = JSON.parse(sessionStorage.getItem(WEATHER_KEY) || 'null');
+      if (cached && cached.date === wanted) renderWeather(cached);
+    } catch (e) {}
+
+    try {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${CAMP_LAT}&longitude=${CAMP_LON}` +
+        `&daily=weather_code,temperature_2m_max,temperature_2m_min` +
+        `&temperature_unit=fahrenheit&timezone=America/New_York&forecast_days=2`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('weather request failed: ' + res.status);
+      const d = (await res.json()).daily;
+      // Index 1 is tomorrow (index 0 is today).
+      const w = {
+        date: d.time[1],
+        code: d.weather_code[1],
+        high: Math.round(d.temperature_2m_max[1]),
+        low: Math.round(d.temperature_2m_min[1]),
+      };
+      try { sessionStorage.setItem(WEATHER_KEY, JSON.stringify(w)); } catch (e) {}
+      renderWeather(w);
+    } catch (e) {
+      // Offline or API error: keep any cached badge, otherwise leave it hidden
+      // so the card still prints cleanly.
+    }
+  }
+
+  // Kick off the forecast fetch. Must run after the const/function
+  // declarations above, otherwise it hits the temporal dead zone.
+  loadWeather();
 </script>
 
 </body>
